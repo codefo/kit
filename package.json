@@ -1,0 +1,22 @@
+{
+  "name": "kit",
+  "version": "0.0.1",
+  "description": "A bunch of tools that help me with various tasks",
+  "scripts": {
+    "lint": "eslint --fix --ext .js .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Gleb Pospelov <codefo@codefo.com>",
+  "license": "The Unlicense",
+  "dependencies": {
+    "decimal.js": "^10.4.3",
+    "luxon": "^3.2.1",
+    "numeral": "^2.0.6",
+    "pdf.js-extract": "^0.2.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.34.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-plugin-import": "^2.27.5"
+  }
+}
