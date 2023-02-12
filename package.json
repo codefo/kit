@@ -1,6 +1,6 @@
 {
   "name": "kit",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A bunch of tools that help me with various tasks",
   "scripts": {
     "lint": "eslint --fix --ext .js .",

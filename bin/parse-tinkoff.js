@@ -60,11 +60,9 @@ function parseFile(path) {
 }
 
 function parseDateTime(str) {
-  let datetime;
+  let datetime = DateTime.fromFormat(str, DATETIME_FORMAT_1, { zone: TIMEZONE });
 
-  try {
-    datetime = DateTime.fromFormat(str, DATETIME_FORMAT_1, { zone: TIMEZONE });
-  } catch (err) {
+  if (!datetime.isValid) {
     datetime = DateTime.fromFormat(str, DATETIME_FORMAT_2, { zone: TIMEZONE });
   }
 
