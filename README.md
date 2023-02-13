@@ -23,6 +23,14 @@ This tool parses a PDF statement from [Tinkoff Bank](https://www.tinkoff.ru/) an
 $ node ./bin/parse-tinkoff.js ./statement.pdf > ./statement.tsv
 ```
 
+#### `bin/merge-tsv`
+
+This tool merges multiple [.tsv](https://en.wikipedia.org/wiki/Tab-separated_values) files into one, and sorts the result by first column if `-s` flag is provided
+
+```sh
+$ node ./bin/merge-tsv.js "./path/to/*.tsv" -s > ./merged.tsv
+```
+
 ## License
 
 [The Unlicense](UNLICENSE)

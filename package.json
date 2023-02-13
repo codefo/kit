@@ -1,6 +1,6 @@
 {
   "name": "kit",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "A bunch of tools that help me with various tasks",
   "scripts": {
     "lint": "eslint --fix --ext .js .",
@@ -10,6 +10,7 @@
   "license": "The Unlicense",
   "dependencies": {
     "decimal.js": "^10.4.3",
+    "glob": "^8.1.0",
     "luxon": "^3.2.1",
     "numeral": "^2.0.6",
     "pdf.js-extract": "^0.2.1"
