@@ -1,12 +1,9 @@
 #!/usr/bin/env node
 
-const { DateTime } = require('luxon');
-const numeral = require('numeral');
-const Decimal = require('decimal.js');
-
+const dt = require('../lib/datetime');
 const pdf = require('../lib/pdf');
 const tsv = require('../lib/tsv');
-const { CURRENCIES } = require('../lib/finance');
+const finance = require('../lib/finance');
 
 const HEADER = [
   'Timestamp 1',
@@ -20,34 +17,18 @@ const DATE_REGEX_1 = /^(\d{2})\.(\d{2})\.(\d{4})$/;
 const DATE_REGEX_2 = /^(\d{2})\.(\d{2})\.(\d{2})$/;
 const DATE_FORMAT_1 = 'dd.MM.yyyy';
 const DATE_FORMAT_2 = 'dd.MM.yy';
+const DATE_FORMATS = [DATE_FORMAT_1, DATE_FORMAT_2];
 
 const AMOUNT_REGEX_1 = /^(-)?([\d\W]*),(\d{2})\W(RUR|EUR)$/;
 const AMOUNT_REGEX_2 = /^(-)?([\d\W]*)\.(\d{2})$/;
 
-function parseDate(str) {
-  let date = DateTime.fromFormat(str, DATE_FORMAT_1);
-
-  if (!date.isValid) {
-    date = DateTime.fromFormat(str, DATE_FORMAT_2);
-  }
-
-  return date;
-}
-
 function parseAmount(str) {
-  const first = str.slice(0, str.length - 4);
+  const first = str.slice(0, str.length - 4).replace(/,/g, '.');
   const last = str.slice(str.length - 3);
 
-  const amount = first.replace(/,/g, '.');
-  const currency = CURRENCIES.find((c) => c.str === last);
-
-  if (!currency) {
-    throw new Error(`Unknown currency: ${str}`);
-  }
-
   return [
-    numeral(amount).format('+0.00'),
-    currency.code,
+    finance.formatAmount(first),
+    finance.findCurrency(last),
   ];
 }
 
@@ -96,7 +77,7 @@ function extract(data) {
 }
 
 function transform(line) {
-  const date1 = parseDate(line.shift());
+  const date1 = dt.parseDate(line.shift(), DATE_FORMATS);
   const [amount, currency] = parseAmount(line.pop());
   const details = line.join(' ').split(' ');
 
@@ -110,11 +91,11 @@ function transform(line) {
     const isDateX = Boolean(dateX.match(DATE_REGEX_2));
     const isDateY = Boolean(dateY.match(DATE_REGEX_2));
     const isAmount = Boolean(details[l - 2].match(AMOUNT_REGEX_2));
-    const isCurrency = CURRENCIES.map((c) => c.str).includes(details[l - 1]);
+    const isCurrency = finance.checkCurrency(details[l - 1]);
 
     if (isDateX && isDateY && isAmount && isCurrency) {
-      dateX = parseDate(dateX);
-      dateY = parseDate(dateY);
+      dateX = dt.parseDate(dateX, DATE_FORMATS);
+      dateY = dt.parseDate(dateY, DATE_FORMATS);
       date2 = dateX > dateY ? dateY : dateX;
     }
   }
@@ -128,24 +109,6 @@ function transform(line) {
   ];
 }
 
-function check(lines) {
-  let income = new Decimal(0);
-  let expences = new Decimal(0);
-
-  for (const line of lines) {
-    const amount = new Decimal(line[2]);
-
-    if (amount > 0) {
-      income = income.plus(amount);
-    } else {
-      expences = expences.plus(amount);
-    }
-  }
-
-  console.log(`Income: ${income}`);
-  console.log(`Expences: ${expences}`);
-}
-
 async function main() {
   const path = process.argv[2];
   const mode = process.argv[3];
@@ -155,12 +118,12 @@ async function main() {
   }
 
   const data = await pdf.parseFile(path);
-  const lines = extract(data).map(transform);
+  const records = extract(data).map(transform);
 
   if (mode === '-c') {
-    check(lines);
+    console.log(finance.makeReport(records, (record) => [record[2], record[3]]));
   } else {
-    tsv.print(HEADER, lines);
+    tsv.print(HEADER, records);
   }
 }
 
