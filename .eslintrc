@@ -8,5 +8,11 @@
   "extends": "airbnb-base",
   "parserOptions": {
     "ecmaVersion": "latest"
+  },
+  "rules": {
+    "no-console": "off",
+    "no-continue": "off",
+    "no-restricted-syntax": "off",
+    "no-plusplus": "off"
   }
 }

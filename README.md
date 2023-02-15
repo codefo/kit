@@ -39,6 +39,14 @@ This tool parses an XML statement from [TBC Bank](https://www.tbcbank.ge/) and o
 $ node ./bin/parse-tbc.js ./statement.xml > ./statement.tsv
 ```
 
+#### `bin/parse-alfa`
+
+This tool parses an PDF statement from [Alfa-Bank](https://alfabank.ru/) and outputs a [.tsv](https://en.wikipedia.org/wiki/Tab-separated_values) file
+
+```sh
+$ node ./bin/parse-alfa.js ./statement.pdf > ./statement.tsv
+```
+
 ## License
 
 [The Unlicense](UNLICENSE)
