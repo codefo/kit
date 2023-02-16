@@ -15,37 +15,25 @@ $ make install
 
 ## Usage
 
-#### `bin/parse-tinkoff`
+### `bin/merge-tsv`
 
-This tool parses a PDF statement from [Tinkoff Bank](https://www.tinkoff.ru/) and outputs a [.tsv](https://en.wikipedia.org/wiki/Tab-separated_values) file
-
-```sh
-$ node ./bin/parse-tinkoff.js ./statement.pdf > ./statement.tsv
-```
-
-#### `bin/merge-tsv`
-
-This tool merges multiple [.tsv](https://en.wikipedia.org/wiki/Tab-separated_values) files into one, and sorts the result by first column if `-s` flag is provided
+This tool merges multiple [.tsv](https://en.wikipedia.org/wiki/Tab-separated_values) files into one
 
 ```sh
-$ node ./bin/merge-tsv.js "./path/to/*.tsv" -s > ./merged.tsv
+$ node ./bin/merge-tsv.js "./path/to/*.tsv" [-s] > ./merged.tsv
 ```
+> `[-s]` flag is optional and is used to sort the result by first column.
 
-#### `bin/parse-tbc`
+### `bin/parse-bs`
 
-This tool parses an XML statement from [TBC Bank](https://www.tbcbank.ge/) and outputs a [.tsv](https://en.wikipedia.org/wiki/Tab-separated_values) file
+This tool parses bank statements from different banks ([Alfa-Bank](https://alfabank.ru/), [TBC Bank](https://www.tbcbank.ge/), [Tinkoff Bank](https://www.tinkoff.ru/)) and outputs a [.tsv](https://en.wikipedia.org/wiki/Tab-separated_values) file
 
 ```sh
-$ node ./bin/parse-tbc.js ./statement.xml > ./statement.tsv
+$ node ./bin/parse-bs.js <bank> ./statement.file [-r] > ./statements.tsv
 ```
-
-#### `bin/parse-alfa`
-
-This tool parses an PDF statement from [Alfa-Bank](https://alfabank.ru/) and outputs a [.tsv](https://en.wikipedia.org/wiki/Tab-separated_values) file
-
-```sh
-$ node ./bin/parse-alfa.js ./statement.pdf > ./statement.tsv
-```
+> `<bank>` parameter can be one of the following: `alfa`, `tbc` or `tinkoff`.
+>
+> `[-r]` flag is optional and is used to create a overall report for the parsed statements in `JSON` format.
 
 ## License
 
