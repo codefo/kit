@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 
-/* eslint-disable no-console */
-/* eslint-disable no-restricted-syntax */
-
 const fs = require('fs');
 const glob = require('glob');
+
+const tsv = require('../lib/tsv');
 
 function main() {
   const pattern = process.argv[2];
@@ -37,8 +36,7 @@ function main() {
     ];
   }
 
-  console.log(header);
-  console.log(result.map((l) => l.join('\t')).join('\n'));
+  tsv.print(header, result);
 }
 
 main();

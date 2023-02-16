@@ -1,15 +1,9 @@
 #!/usr/bin/env node
 
-/* eslint-disable no-console */
-/* eslint-disable no-restricted-syntax */
-
-const fs = require('fs');
-const { XMLParser } = require('fast-xml-parser');
-const { DateTime } = require('luxon');
-const numeral = require('numeral');
-const Decimal = require('decimal.js');
-
-const DELIMITER = '\t';
+const xml = require('../lib/xml');
+const dt = require('../lib/datetime');
+const fin = require('../lib/finance');
+const tsv = require('../lib/tsv');
 
 const HEADER = [
   'Timestamp 1',
@@ -23,146 +17,100 @@ const HEADER = [
 ];
 
 const TIMEZONE = 'Asia/Tbilisi';
-const DATE_FORMAT = 'dd/MM/yyyy';
-const DATE_TIME_FORMAT = 'MMM d yyyy h:mma';
+const DATE_FORMATS = ['dd/MM/yyyy'];
+const DATE_TIME_FORMATS = ['MMM d yyyy h:mma'];
 const DATE_TIME_REGEXP = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\W*(\d{1,2})\W*(\d{4})\W*(\d{1,2}:\d{2})(AM|PM)/;
 
 const AMOUNT_REGEX = /თანხა (\d+\.\d{2}) ([A-Z]{3})/;
 
-const CURRENCIES = ['GEL', 'USD', 'EUR', 'TRY', 'RSD'];
-
-const parser = new XMLParser();
-
-function parseDate(str) {
-  return DateTime.fromFormat(str, DATE_FORMAT, { zone: TIMEZONE });
-}
-
-function findDateTime(str) {
-  const match = str.match(DATE_TIME_REGEXP);
-
-  if (match) {
-    const matched = match[0].replaceAll('  ', ' ');
-    const result = DateTime.fromFormat(matched, DATE_TIME_FORMAT, { zone: TIMEZONE });
-
-    return result.setZone('UTC');
-  }
-
-  return null;
-}
-
-function parseAmount(str) {
-  return numeral(str).format('+0.00');
-}
-
-function findAmount(str) {
-  const match = str.match(AMOUNT_REGEX);
-
-  if (match) {
-    const amount = parseAmount(match[1]);
-    const currency = match[2];
-
-    if (!CURRENCIES.includes(currency)) {
-      throw new Error(`Unknown currency: ${currency}`);
-    }
-
-    return [amount, currency];
-  }
-
-  return [];
-}
-
-function parseFile(file) {
-  const xml = fs.readFileSync(file, 'utf8');
-  const data = parser.parse(xml);
+function extract(data) {
   const records = data['gemini:TransactionsHistory']['gemini:Record'];
 
   const result = [];
 
   for (const record of records) {
-    const date1 = parseDate(record['gemini:DocumentDate']);
-    const date2 = parseDate(record['gemini:Date']);
-    const amount1 = parseAmount(record['gemini:Amount']);
+    const date1 = record['gemini:DocumentDate'];
+    const date2 = record['gemini:Date'];
+    const amount1 = record['gemini:Amount'];
     const currency1 = record['gemini:Currency'];
     const details = record['gemini:Description'];
     const operationCode = record['gemini:OperationCode'];
 
-    const dateTime1 = findDateTime(record['gemini:Description']);
-    const [amount2, currency2] = findAmount(record['gemini:Description']);
+    let dateTime1;
+    let amount2;
+    let currency2;
+
+    const dateTimeMatch = details.match(DATE_TIME_REGEXP);
+    const amountMatch = details.match(AMOUNT_REGEX);
+
+    if (dateTimeMatch) {
+      dateTime1 = dateTimeMatch[0].replaceAll('  ', ' ');
+    }
+
+    if (amountMatch) {
+      [, amount2, currency2] = amountMatch;
+    }
 
     result.push({
-      amount1, currency1, amount2, currency2, details, date1, date2, dateTime1, operationCode,
-    });
-  }
-
-  return result;
-}
-
-function check(data) {
-  const income = {};
-  const expences = {};
-
-  for (const record of data) {
-    if (!income[record.currency1]) {
-      income[record.currency1] = new Decimal(0);
-    }
-    if (!expences[record.currency1]) {
-      expences[record.currency1] = new Decimal(0);
-    }
-
-    const value = new Decimal(record.amount1);
-
-    if (value > 0) {
-      income[record.currency1] = income[record.currency1].add(value);
-    } else {
-      expences[record.currency1] = expences[record.currency1].add(value);
-    }
-  }
-
-  console.log(income);
-  console.log(expences);
-}
-
-function print(data) {
-  console.log(HEADER.join(DELIMITER));
-
-  for (const record of data) {
-    const {
-      amount1, currency1, currency2, details, date1, date2, dateTime1, operationCode,
-    } = record;
-
-    let { amount2 } = record;
-
-    if (amount2 && amount1[0] === '-') {
-      amount2 = `-${amount2.slice(1)}`;
-    }
-
-    const line = [
-      dateTime1
-        ? dateTime1.toISO({ suppressMilliseconds: true, suppressSeconds: true })
-        : date1.toISODate(),
-      date2 ? date2.toISODate() : '',
+      date1,
+      date2,
+      dateTime1,
       amount1,
       currency1,
       amount2,
       currency2,
       details,
       operationCode,
-    ];
-
-    console.log(line.join(DELIMITER));
+    });
   }
+
+  return result;
+}
+
+function transform(record) {
+  const {
+    date1,
+    date2,
+    dateTime1,
+    amount1,
+    currency1,
+    currency2,
+    details,
+    operationCode,
+  } = record;
+
+  let { amount2 } = record;
+
+  if (amount2 && amount1[0] === '-') {
+    amount2 = `-${amount2.slice(1)}`;
+  }
+
+  return [
+    dateTime1
+      ? dt.parseDateTime(dateTime1, TIMEZONE, DATE_TIME_FORMATS)
+        .toISO({ suppressMilliseconds: true, suppressSeconds: true })
+      : dt.parseDate(date1, DATE_FORMATS).toISODate(),
+    date2 ? dt.parseDate(date2, DATE_FORMATS).toISODate() : '',
+    fin.getAmount(amount1),
+    fin.getCurrency(currency1),
+    fin.getAmount(amount2),
+    currency2 ? fin.getCurrency(currency2) : '',
+    details,
+    operationCode,
+  ];
 }
 
 function main() {
   const file = process.argv[2];
   const mode = process.argv[3];
 
-  const data = parseFile(file);
+  const data = xml.parseFile(file);
+  const records = extract(data).map(transform);
 
-  if (mode === '-c') {
-    check(data);
+  if (mode === '-r') {
+    console.log(fin.makeReport(records, (record) => [record[2], record[3]]));
   } else {
-    print(data);
+    tsv.print(HEADER, records);
   }
 }
 

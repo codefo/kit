@@ -3,7 +3,7 @@
 const dt = require('../lib/datetime');
 const pdf = require('../lib/pdf');
 const tsv = require('../lib/tsv');
-const finance = require('../lib/finance');
+const fin = require('../lib/finance');
 
 const HEADER = [
   'Timestamp 1',
@@ -15,22 +15,10 @@ const HEADER = [
 
 const DATE_REGEX_1 = /^(\d{2})\.(\d{2})\.(\d{4})$/;
 const DATE_REGEX_2 = /^(\d{2})\.(\d{2})\.(\d{2})$/;
-const DATE_FORMAT_1 = 'dd.MM.yyyy';
-const DATE_FORMAT_2 = 'dd.MM.yy';
-const DATE_FORMATS = [DATE_FORMAT_1, DATE_FORMAT_2];
+const DATE_FORMATS = ['dd.MM.yyyy', 'dd.MM.yy'];
 
 const AMOUNT_REGEX_1 = /^(-)?([\d\W]*),(\d{2})\W(RUR|EUR)$/;
 const AMOUNT_REGEX_2 = /^(-)?([\d\W]*)\.(\d{2})$/;
-
-function parseAmount(str) {
-  const first = str.slice(0, str.length - 4).replace(/,/g, '.');
-  const last = str.slice(str.length - 3);
-
-  return [
-    finance.formatAmount(first),
-    finance.findCurrency(last),
-  ];
-}
 
 function extract(data) {
   const result = [];
@@ -77,35 +65,39 @@ function extract(data) {
 }
 
 function transform(line) {
-  const date1 = dt.parseDate(line.shift(), DATE_FORMATS);
-  const [amount, currency] = parseAmount(line.pop());
-  const details = line.join(' ').split(' ');
+  const first = line.shift();
+  const last = line.pop();
+  const rest = line.join(' ').split(' ');
 
-  let date2;
-  const l = details.length;
+  let date1;
+  const date2 = dt.parseDate(first, DATE_FORMATS);
+  const amount = fin.getAmount(last.slice(0, last.length - 4).replace(/,/g, '.'));
+  const currency = fin.getCurrency(last.slice(last.length - 3));
 
-  if (l > 4) {
-    let dateX = details[l - 4];
-    let dateY = details[l - 3];
+  const len = rest.length;
+
+  if (len > 4) {
+    let dateX = rest[len - 4];
+    let dateY = rest[len - 3];
 
     const isDateX = Boolean(dateX.match(DATE_REGEX_2));
     const isDateY = Boolean(dateY.match(DATE_REGEX_2));
-    const isAmount = Boolean(details[l - 2].match(AMOUNT_REGEX_2));
-    const isCurrency = finance.checkCurrency(details[l - 1]);
+    const isAmount = Boolean(rest[len - 2].match(AMOUNT_REGEX_2));
+    const isCurrency = fin.checkIsCurrency(rest[len - 1]);
 
     if (isDateX && isDateY && isAmount && isCurrency) {
       dateX = dt.parseDate(dateX, DATE_FORMATS);
       dateY = dt.parseDate(dateY, DATE_FORMATS);
-      date2 = dateX > dateY ? dateY : dateX;
+      date1 = dateX > dateY ? dateY : dateX;
     }
   }
 
   return [
-    date1.toISODate(),
-    date2 ? date2.toISODate() : '',
+    date1 ? date1.toISODate() : date2.toISODate(),
+    date2.toISODate(),
     amount,
     currency,
-    details.join(' '),
+    rest.join(' '),
   ];
 }
 
@@ -120,8 +112,8 @@ async function main() {
   const data = await pdf.parseFile(path);
   const records = extract(data).map(transform);
 
-  if (mode === '-c') {
-    console.log(finance.makeReport(records, (record) => [record[2], record[3]]));
+  if (mode === '-r') {
+    console.log(fin.makeReport(records, (record) => [record[2], record[3]]));
   } else {
     tsv.print(HEADER, records);
   }
