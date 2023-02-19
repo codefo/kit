@@ -1,28 +1,12 @@
 import Decimal from 'decimal.js';
+import fs from 'fs';
+import yaml from 'js-yaml';
 import numeral from 'numeral';
+import path from 'path';
 
-const CURRENCIES = [
-  { str: '₽', code: 'RUB' },
-  { str: '$', code: 'USD' },
-  { str: '€', code: 'EUR' },
-  { str: '£', code: 'GBP' },
-  { str: '₺', code: 'TRY' },
-  { str: '₾', code: 'GEL' },
-  { str: 'Ft', code: 'HUF' },
-  { str: 'zł', code: 'PLN' },
-  { str: 'Kč', code: 'CZK' },
-  { str: 'лв', code: 'BGN' },
-  { str: 'kr', code: 'SEK' },
-  { str: 'Br', code: 'BYN' },
-  { str: 'DKK', code: 'DKK' },
-  { str: 'NKr', code: 'NOK' },
-  { str: 'RUR', code: 'RUB' },
-  { str: 'USD', code: 'USD' },
-  { str: 'EUR', code: 'EUR' },
-  { str: 'GEL', code: 'GEL' },
-  { str: 'TRY', code: 'TRY' },
-  { str: 'RSD', code: 'RSD' },
-];
+const cfg = yaml.load(fs.readFileSync(path.join(__dirname, '../cfg/finance.yaml'), 'utf8'));
+
+const CURRENCIES = cfg.currency.map((c) => c.values.map((v) => ({ str: v, code: c.code }))).flat();
 
 export function makeReport(data: string[][], fn: (record: string[]) => string[]) {
   const income = {};

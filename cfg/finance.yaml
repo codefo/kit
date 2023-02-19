@@ -1,0 +1,32 @@
+---
+currency:
+- code: BGN
+  values: ['лв']
+- code: BYN
+  values: ['Br']
+- code: CZK
+  values: ['Kč']
+- code: DKK
+  values: ['DKK']
+- code: EUR
+  values: ['€', 'EUR']
+- code: GBP
+  values: ['£']
+- code: GEL
+  values: ['₾', 'GEL']
+- code: HUF
+  values: ['Ft']
+- code: NOK
+  values: ['NKr']
+- code: PLN
+  values: ['zł']
+- code: RSD
+  values: ['RSD']
+- code: RUB
+  values: ['₽', 'RUR']
+- code: SEK
+  values: ['kr']
+- code: TRY
+  values: ['₺', 'TRY']
+- code: USD
+  values: ['$', 'USD']
