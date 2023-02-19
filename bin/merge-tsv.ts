@@ -1,9 +1,9 @@
-#!/usr/bin/env node
+#!/usr/bin/env ts-node
 
-const fs = require('fs');
-const glob = require('glob');
+import fs from 'fs';
+import glob from 'glob';
 
-const tsv = require('../lib/tsv');
+import * as tsv from '../lib/tsv.js';
 
 function main() {
   const pattern = process.argv[2];

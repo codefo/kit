@@ -1,6 +1,6 @@
-const { DateTime } = require('luxon');
+import { DateTime } from 'luxon';
 
-function parseDate(str, formats) {
+export function parseDate(str: string, formats: string[]) {
   for (const format of formats) {
     const date = DateTime.fromFormat(str, format);
 
@@ -12,7 +12,7 @@ function parseDate(str, formats) {
   throw new Error(`Invalid date: ${str} ${formats}`);
 }
 
-function parseDateTime(str, timezone, formats) {
+export function parseDateTime(str: string, timezone: string, formats: string[]) {
   for (const format of formats) {
     const datetime = DateTime.fromFormat(str, format, { zone: timezone });
 
@@ -23,8 +23,3 @@ function parseDateTime(str, timezone, formats) {
 
   throw new Error(`Invalid datetime: ${str} ${formats}`);
 }
-
-module.exports = {
-  parseDate,
-  parseDateTime,
-};

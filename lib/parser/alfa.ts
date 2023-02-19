@@ -1,15 +1,10 @@
-const path = require('path');
-const dt = require('../datetime');
-const pdf = require('../pdf');
-const fin = require('../finance');
+import * as path from 'path';
 
-const HEADER = [
-  'Timestamp 1',
-  'Timestamp 2',
-  'Amount',
-  'Currency',
-  'Details',
-];
+import * as dt from '../datetime';
+import * as fin from '../finance';
+import * as pdf from '../pdf';
+
+const HEADER = ['Timestamp 1', 'Timestamp 2', 'Amount', 'Currency', 'Details'];
 
 const DATE_REGEX_1 = /^(\d{2})\.(\d{2})\.(\d{4})$/;
 const DATE_REGEX_2 = /^(\d{2})\.(\d{2})\.(\d{2})$/;
@@ -18,7 +13,7 @@ const DATE_FORMATS = ['dd.MM.yyyy', 'dd.MM.yy'];
 const AMOUNT_REGEX_1 = /^(-)?([\d\W]*),(\d{2})\W(RUR|EUR)$/;
 const AMOUNT_REGEX_2 = /^(-)?([\d\W]*)\.(\d{2})$/;
 
-function extract(data) {
+function extract(data): string[][] {
   const result = [];
 
   for (const page of data.pages) {
@@ -34,9 +29,7 @@ function extract(data) {
 
       const isDateTime = Boolean(value.match(DATE_REGEX_1));
       const isFirstElement = item.x < 30;
-      const isLastElementAmount = line.length > 0
-        ? Boolean(line[line.length - 1].match(AMOUNT_REGEX_1))
-        : false;
+      const isLastElementAmount = line.length > 0 ? Boolean(line[line.length - 1].match(AMOUNT_REGEX_1)) : false;
       const isEndOfLine = isLastElementAmount && isFirstElement;
 
       if (isEndOfLine) {
@@ -62,7 +55,7 @@ function extract(data) {
   return result;
 }
 
-function transform(line) {
+function transform(line): string[] {
   const first = line.shift();
   const last = line.pop();
   const rest = line.join(' ').split(' ');
@@ -90,16 +83,10 @@ function transform(line) {
     }
   }
 
-  return [
-    date1 ? date1.toISODate() : date2.toISODate(),
-    date2.toISODate(),
-    amount,
-    currency,
-    rest.join(' '),
-  ];
+  return [date1 ? date1.toISODate() : date2.toISODate(), date2.toISODate(), amount, currency, rest.join(' ')];
 }
 
-async function parse(filePath) {
+export async function parse(filePath: string) {
   if (path.extname(filePath) !== '.pdf') {
     throw new Error('File is not a PDF');
   }
@@ -107,13 +94,7 @@ async function parse(filePath) {
   const data = await pdf.parseFile(filePath);
   const records = extract(data).map(transform);
 
-  return [
-    HEADER,
-    records,
-  ];
+  return [HEADER, ...records];
 }
 
-module.exports = {
-  parse,
-  report: (record) => [record[2], record[3]],
-};
+export const report = (record: string[]) => [record[2], record[3]];

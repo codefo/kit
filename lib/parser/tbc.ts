@@ -1,7 +1,8 @@
-const path = require('path');
-const xml = require('../xml');
-const dt = require('../datetime');
-const fin = require('../finance');
+import * as path from 'path';
+
+import * as dt from '../datetime';
+import * as fin from '../finance';
+import * as xml from '../xml';
 
 const HEADER = [
   'Timestamp 1',
@@ -17,10 +18,12 @@ const HEADER = [
 const TIMEZONE = 'Asia/Tbilisi';
 const DATE_FORMATS = ['dd/MM/yyyy'];
 const DATE_TIME_FORMATS = ['MMM d yyyy h:mma'];
-const DATE_TIME_REGEXP = /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\W*(\d{1,2})\W*(\d{4})\W*(\d{1,2}:\d{2})(AM|PM)/;
+const DATE_TIME_REGEXP =
+  /(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\W*(\d{1,2})\W*(\d{4})\W*(\d{1,2}:\d{2})(AM|PM)/;
 
 const AMOUNT_REGEX = /თანხა (\d+\.\d{2}) ([A-Z]{3})/;
-function extract(data) {
+
+function extract(data): string[][] {
   const records = data['gemini:TransactionsHistory']['gemini:Record'];
 
   const result = [];
@@ -64,17 +67,8 @@ function extract(data) {
   return result;
 }
 
-function transform(record) {
-  const {
-    date1,
-    date2,
-    dateTime1,
-    amount1,
-    currency1,
-    currency2,
-    details,
-    operationCode,
-  } = record;
+function transform(record): string[] {
+  const { date1, date2, dateTime1, amount1, currency1, currency2, details, operationCode } = record;
 
   let { amount2 } = record;
 
@@ -84,8 +78,9 @@ function transform(record) {
 
   return [
     dateTime1
-      ? dt.parseDateTime(dateTime1, TIMEZONE, DATE_TIME_FORMATS)
-        .toISO({ suppressMilliseconds: true, suppressSeconds: true })
+      ? dt
+          .parseDateTime(dateTime1, TIMEZONE, DATE_TIME_FORMATS)
+          .toISO({ suppressMilliseconds: true, suppressSeconds: true })
       : dt.parseDate(date1, DATE_FORMATS).toISODate(),
     date2 ? dt.parseDate(date2, DATE_FORMATS).toISODate() : '',
     fin.getAmount(amount1),
@@ -97,22 +92,17 @@ function transform(record) {
   ];
 }
 
-async function parse(filePath) {
+export async function parse(filePath) {
   if (path.extname(filePath) !== '.xml') {
     throw new Error('File is not a XML');
   }
 
   const data = xml.parseFile(filePath);
+  const records = extract(data).map(transform);
 
-  const result = [
-    HEADER,
-    extract(data).map(transform),
-  ];
+  const result = [HEADER, ...records];
 
   return Promise.resolve(result);
 }
 
-module.exports = {
-  parse,
-  report: (record) => [record[2], record[3]],
-};
+export const report = (record) => [record[2], record[3]];

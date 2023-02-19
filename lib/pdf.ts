@@ -1,6 +1,6 @@
-const { PDFExtract } = require('pdf.js-extract');
+import { PDFExtract } from 'pdf.js-extract';
 
-function parseFile(path) {
+export function parseFile(path: string) {
   const pdfExtract = new PDFExtract();
 
   return new Promise((resolve, reject) => {
@@ -13,7 +13,3 @@ function parseFile(path) {
     });
   });
 }
-
-module.exports = {
-  parseFile,
-};

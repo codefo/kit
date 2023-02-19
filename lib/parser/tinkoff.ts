@@ -1,24 +1,16 @@
-const path = require('path');
-const pdf = require('../pdf');
-const dt = require('../datetime');
-const fin = require('../finance');
+import * as path from 'path';
 
-const HEADER = [
-  'Timestamp 1',
-  'Timestamp 2',
-  'Amount 1',
-  'Currency 1',
-  'Amount 2',
-  'Currency 2',
-  'Details',
-  'Card',
-];
+import * as dt from '../datetime';
+import * as fin from '../finance';
+import * as pdf from '../pdf';
+
+const HEADER = ['Timestamp 1', 'Timestamp 2', 'Amount 1', 'Currency 1', 'Amount 2', 'Currency 2', 'Details', 'Card'];
 
 const TIMEZONE = 'Europe/Moscow';
 const DATETIME_FORMATS = ['dd.MM.yyyy HH:mm:ss', 'dd.MM.yyyy HH:mm'];
 const DATETIME_REGEX = /^(\d{2})\.(\d{2})\.(\d{4}) (\d{2}):(\d{2})(:(\d{2}))?$/;
 
-function extract(data) {
+function extract(data): string[][] {
   const result = [];
 
   for (const page of data.pages) {
@@ -59,7 +51,7 @@ function extract(data) {
   return result;
 }
 
-function transform(line) {
+function transform(line): string[] {
   let result = [];
 
   let index = 0;
@@ -106,7 +98,7 @@ function transform(line) {
   return result;
 }
 
-async function parse(filePath) {
+export async function parse(filePath: string) {
   if (path.extname(filePath) !== '.pdf') {
     throw new Error('File is not a PDF');
   }
@@ -114,13 +106,7 @@ async function parse(filePath) {
   const data = await pdf.parseFile(filePath);
   const records = extract(data).map(transform);
 
-  return [
-    HEADER,
-    records,
-  ];
+  return [HEADER, ...records];
 }
 
-module.exports = {
-  parse,
-  report: (record) => [record[4], record[5]],
-};
+export const report = (record: string[]) => [record[4], record[5]];

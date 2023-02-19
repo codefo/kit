@@ -1,5 +1,5 @@
-const Decimal = require('decimal.js');
-const numeral = require('numeral');
+import Decimal from 'decimal.js';
+import numeral from 'numeral';
 
 const CURRENCIES = [
   { str: '₽', code: 'RUB' },
@@ -24,9 +24,11 @@ const CURRENCIES = [
   { str: 'RSD', code: 'RSD' },
 ];
 
-function makeReport(data, fn) {
+export function makeReport(data: string[][], fn: (record: string[]) => string[]) {
   const income = {};
   const outcome = {};
+
+  const zero = new Decimal(0);
 
   for (const record of data) {
     const [amount, currency] = fn(record);
@@ -40,7 +42,7 @@ function makeReport(data, fn) {
 
     const value = new Decimal(amount);
 
-    if (value > 0) {
+    if (value.comparedTo(zero) > 0) {
       income[currency] = income[currency].add(value);
     } else {
       outcome[currency] = outcome[currency].add(value);
@@ -50,11 +52,18 @@ function makeReport(data, fn) {
   return [income, outcome];
 }
 
-function getAmount(value) {
+export function printReport(data: string[][], fn: (record: string[]) => string[]) {
+  const [income, outcome] = makeReport(data, fn);
+
+  console.log('Income:', income);
+  console.log('Outcome:', outcome);
+}
+
+export function getAmount(value: string) {
   return numeral(value).format('+0.00');
 }
 
-function getCurrency(value) {
+export function getCurrency(value: string) {
   const currency = CURRENCIES.find((c) => c.str === value);
 
   if (!currency) {
@@ -64,18 +73,10 @@ function getCurrency(value) {
   return currency.code;
 }
 
-function checkIsCurrency(value) {
+export function checkIsCurrency(value: string) {
   return CURRENCIES.map((c) => c.str).includes(value);
 }
 
-function checkIsCurrencyIncluded(value) {
+export function checkIsCurrencyIncluded(value: string) {
   return CURRENCIES.some((c) => value.includes(c.str));
 }
-
-module.exports = {
-  makeReport,
-  getCurrency,
-  getAmount,
-  checkIsCurrency,
-  checkIsCurrencyIncluded,
-};
