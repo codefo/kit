@@ -1,0 +1,13 @@
+brew "jq"
+brew "yq"
+brew "htop"
+
+brew "docker"
+cask "dotnet-sdk"
+
+cask "jetbrains-toolbox"
+cask "visual-studio-code"
+
+cask "mullvadvpn"
+cask "spotify"
+cask "telegram"
